@@ -18,16 +18,28 @@ Un solo dominio alcanza (ej. `https://referentes.tudominio.com`).
 
 ## 0. Primera vez: imágenes en GitHub Container Registry
 
-1. Hacé push a `main` → en GitHub: pestaña **Actions** → workflow **Publish Docker images** debe quedar en verde.
-2. En GitHub: **Packages** → deberían aparecer `referentes-backend` y `referentes-frontend`.
-3. Si el repo es privado, los packages también son privados. En Coolify agregá registry:
-   - **Settings** → **Docker Registries** → **+ Add**
-   - Registry: `ghcr.io`
-   - Username: `lucasdealmeida123`
-   - Password: Personal Access Token con permiso **`read:packages`**
-4. En el recurso Docker Compose, vinculá ese registry (o marcá las imágenes como **Public** en GitHub → Package → Settings).
+### A) Permiso para que Actions publique (obligatorio una vez)
 
-**Alternativa rápida:** en cada package de GHCR → **Package settings** → **Change visibility** → **Public** (solo las imágenes, el código sigue privado en GitHub).
+En GitHub → repo **referentes** → **Settings** → **Actions** → **General**:
+
+1. **Workflow permissions** → elegí **Read and write permissions**
+2. Guardá
+
+Sin esto el workflow corre pero **no sube las imágenes** y Coolify responde `denied`.
+
+### B) Generar las imágenes
+
+1. **Actions** → **Publish Docker images** → **Run workflow** (botón manual)
+2. Esperá el check **verde**
+3. Verificá en **Packages** (tu perfil o el repo) que existan:
+   - `referentes-backend`
+   - `referentes-frontend`
+
+El workflow las deja **públicas** automáticamente. Si falla ese paso, hacelas public manual en Package settings.
+
+### C) Registry en Coolify (solo si siguen privadas)
+
+- **Settings** → **Docker Registries** → `ghcr.io` + token con `read:packages`
 
 ## Repositorio privado en GitHub
 

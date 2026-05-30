@@ -12,6 +12,10 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,9 +33,12 @@ jobs:
           context: .
           file: backend/Dockerfile.prod
           push: true
+          provenance: false
           tags: |
             ghcr.io/lucasdealmeida123/referentes-backend:latest
             ghcr.io/lucasdealmeida123/referentes-backend:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/lucasdealmeida123/referentes
 
       - name: Build and push frontend
         uses: docker/build-push-action@v6
@@ -39,7 +46,25 @@ jobs:
           context: .
           file: frontend/Dockerfile.prod
           push: true
+          provenance: false
           build-args: VITE_API_URL=
           tags: |
             ghcr.io/lucasdealmeida123/referentes-frontend:latest
             ghcr.io/lucasdealmeida123/referentes-frontend:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/lucasdealmeida123/referentes
+
+      - name: Make packages public
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for pkg in referentes-backend referentes-frontend; do
+            echo "→ Setting ${pkg} to public..."
+            curl -fsS -X PATCH \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/user/packages/container/${pkg}" \
+              -d '{"visibility":"public"}' \
+              && echo "✓ ${pkg} is public" \
+              || echo "⚠ Could not set ${pkg} public (set manually in GitHub Packages)"
+          done
