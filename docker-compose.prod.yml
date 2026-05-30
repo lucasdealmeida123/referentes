@@ -45,6 +45,9 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
+    environment:
+      # Coolify: enruta el dominio asignado al puerto 80 del contenedor
+      - SERVICE_FQDN_FRONTEND_80
     expose:
       - "80"
     networks:
