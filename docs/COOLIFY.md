@@ -13,14 +13,31 @@ Guía para publicar **Referentes** en [Coolify](https://coolify.io) con Docker C
 El **frontend** (Nginx) sirve la app React y hace proxy de `/api/*` al backend.  
 Un solo dominio alcanza (ej. `https://referentes.tudominio.com`).
 
+## Repositorio privado en GitHub
+
+No hay problema: Coolify puede clonar repos privados si le das acceso **una sola vez**.
+
+1. En Coolify: **Settings** → **Source Providers** (o **GitHub**).
+2. **Connect GitHub** e instalá la app **Coolify** en tu cuenta u organización.
+3. Al instalar, marcá el repo `referentes` (o dale acceso a **All repositories** / **Selected repositories**).
+4. Volvé a crear el recurso Docker Compose y elegí el repo desde la lista.
+
+Si no querés usar la app de GitHub:
+
+- **Deploy Key**: Coolify te muestra una clave pública → en GitHub: repo → **Settings** → **Deploy keys** → Add.
+- **Personal Access Token (classic)**: permiso `repo` → pegarlo en Coolify como source.
+
+Los **webhooks** (auto-deploy al hacer `git push`) también funcionan con repo privado, siempre que la integración GitHub esté conectada.
+
 ## 1. Crear el proyecto en Coolify
 
 1. Conectá tu servidor Coolify.
 2. **+ New Resource** → **Docker Compose**.
 3. Source: GitHub → `lucasdealmeida123/referentes`.
 4. Branch: `main`.
-5. **Docker Compose file**: `docker-compose.prod.yml`.
-6. Activá **Persistent Storage** para el servicio `db` (volumen `db_data`).
+5. **Base Directory**: `/` (raíz del repo, **no** `frontend` ni `backend`).
+6. **Docker Compose file**: `docker-compose.prod.yml`.
+7. Activá **Persistent Storage** para el servicio `db` (volumen `db_data`).
 
 ## 2. Variables de entorno
 
