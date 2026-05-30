@@ -19,7 +19,7 @@ services:
       - referentes
 
   backend:
-    image: ${BACKEND_IMAGE:-lucasdealmeida123/referentes-backend:latest}
+    image: ${BACKEND_IMAGE:-lucassebastiandealmeida/referentes-backend:latest}
     pull_policy: always
     restart: unless-stopped
     depends_on:
@@ -40,7 +40,7 @@ services:
       - referentes
 
   frontend:
-    image: ${FRONTEND_IMAGE:-lucasdealmeida123/referentes-frontend:latest}
+    image: ${FRONTEND_IMAGE:-lucassebastiandealmeida/referentes-frontend:latest}
     pull_policy: always
     restart: unless-stopped
     depends_on:

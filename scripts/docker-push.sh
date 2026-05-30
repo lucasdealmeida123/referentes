@@ -10,17 +10,18 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-USER="${DOCKERHUB_USER:-lucasdealmeida123}"
+USER="${DOCKERHUB_USER:-lucassebastiandealmeida}"
 TAG="${TAG:-latest}"
 
 BACKEND="${USER}/referentes-backend:${TAG}"
 FRONTEND="${USER}/referentes-frontend:${TAG}"
+PLATFORM="${DOCKER_PLATFORM:-linux/amd64}"
 
-echo "→ Build backend  → ${BACKEND}"
-docker build -f "${ROOT}/backend/Dockerfile.prod" -t "${BACKEND}" "${ROOT}"
+echo "→ Build backend  → ${BACKEND} (${PLATFORM})"
+docker build --platform "${PLATFORM}" -f "${ROOT}/backend/Dockerfile.prod" -t "${BACKEND}" "${ROOT}"
 
-echo "→ Build frontend → ${FRONTEND}"
-docker build -f "${ROOT}/frontend/Dockerfile.prod" \
+echo "→ Build frontend → ${FRONTEND} (${PLATFORM})"
+docker build --platform "${PLATFORM}" -f "${ROOT}/frontend/Dockerfile.prod" \
   --build-arg VITE_API_URL= \
   -t "${FRONTEND}" \
   "${ROOT}"

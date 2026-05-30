@@ -8,15 +8,15 @@
 | Servicio   | Imagen Docker Hub |
 |-----------|-------------------|
 | `db`      | `postgis/postgis:16-3.4` |
-| `backend` | `lucasdealmeida123/referentes-backend:latest` |
-| `frontend`| `lucasdealmeida123/referentes-frontend:latest` |
+| `backend` | `lucassebastiandealmeida/referentes-backend:latest` |
+| `frontend`| `lucassebastiandealmeida/referentes-frontend:latest` |
 
 ---
 
 ## 1. Subir imágenes (desde tu Mac)
 
 ```bash
-# Crear cuenta en hub.docker.com si no tenés (usuario: lucasdealmeida123)
+# Crear cuenta en hub.docker.com si no tenés (usuario: lucassebastiandealmeida)
 
 docker login
 

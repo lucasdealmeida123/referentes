@@ -6,7 +6,8 @@ ARG VITE_API_URL=
 ENV VITE_API_URL=$VITE_API_URL
 
 COPY frontend/package*.json ./
-RUN npm ci
+RUN npm ci --include=optional \
+    && npm install --no-save @rollup/rollup-linux-x64-musl
 
 COPY frontend/index.html frontend/vite.config.ts frontend/tsconfig.json ./
 COPY frontend/src ./src
