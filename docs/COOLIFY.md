@@ -1,164 +1,98 @@
-# Despliegue en Coolify
+# Despliegue en Coolify (Docker Hub + docker pull)
 
-Guía para publicar **Referentes** en [Coolify](https://coolify.io) con Docker Compose.
+## Resumen
 
-## Arquitectura
+1. **Vos** construís y subís imágenes a Docker Hub (una vez por cada cambio).
+2. **Coolify** solo hace `docker pull` — sin build, sin GHCR, sin tokens.
 
-| Servicio   | Imagen                                      | Público |
-|-----------|---------------------------------------------|---------|
-| `db`      | `postgis/postgis:16-3.4`                    | No      |
-| `backend` | `ghcr.io/lucasdealmeida123/referentes-backend:latest` | No |
-| `frontend`| `ghcr.io/lucasdealmeida123/referentes-frontend:latest` | Sí (dominio) |
+| Servicio   | Imagen Docker Hub |
+|-----------|-------------------|
+| `db`      | `postgis/postgis:16-3.4` |
+| `backend` | `lucasdealmeida123/referentes-backend:latest` |
+| `frontend`| `lucasdealmeida123/referentes-frontend:latest` |
 
-Las imágenes **backend** y **frontend** se construyen en **GitHub Actions** al hacer push a `main`.  
-Coolify solo las descarga (no compila en el servidor — evita errores de `backend not found`).
+---
 
-El **frontend** (Nginx) sirve la app React y hace proxy de `/api/*` al backend.  
-Un solo dominio alcanza (ej. `https://referentes.tudominio.com`).
+## 1. Subir imágenes (desde tu Mac)
 
-## 0. Primera vez: imágenes en GitHub Container Registry
+```bash
+# Crear cuenta en hub.docker.com si no tenés (usuario: lucasdealmeida123)
 
-### A) Permiso para que Actions publique (obligatorio una vez)
+docker login
 
-En GitHub → repo **referentes** → **Settings** → **Actions** → **General**:
+cd "/Users/lucasdealmeida/Documents/Sistema politico/Sistemaelecciones"
+bash scripts/docker-push.sh
+```
 
-1. **Workflow permissions** → elegí **Read and write permissions**
-2. Guardá
+La primera vez Docker Hub crea los repos. Dejalos **Public** (Settings → Make public).
 
-Sin esto el workflow corre pero **no sube las imágenes** y Coolify responde `denied`.
+Si tu usuario de Docker Hub es otro:
 
-### B) Generar las imágenes
+```bash
+DOCKERHUB_USER=tu_usuario bash scripts/docker-push.sh
+```
 
-1. **Actions** → **Publish Docker images** → **Run workflow** (botón manual)
-2. Esperá el check **verde**
-3. Verificá en **Packages** (tu perfil o el repo) que existan:
-   - `referentes-backend`
-   - `referentes-frontend`
+Y en Coolify agregá variable `BACKEND_IMAGE=tu_usuario/referentes-backend:latest` (y lo mismo para frontend).
 
-El workflow las deja **públicas** automáticamente. Si falla ese paso, hacelas public manual en Package settings.
+---
 
-### C) Registry en Coolify (solo si siguen privadas)
+## 2. Coolify — Docker Compose
 
-- **Settings** → **Docker Registries** → `ghcr.io` + token con `read:packages`
+1. **+ New Resource** → **Docker Compose**
+2. Repo GitHub → `lucasdealmeida123/referentes` → branch `main`
+3. Compose file: **`docker-compose.prod.yml`**
+4. **Persistent storage** en servicio `db`
 
-## Repositorio privado en GitHub
+### Variables de entorno
 
-No hay problema: Coolify puede clonar repos privados si le das acceso **una sola vez**.
+```env
+POSTGRES_DB=elecciones
+POSTGRES_USER=elecciones
+POSTGRES_PASSWORD=RefMisiones2025!xK7pQ
+DB_SYNCHRONIZE=false
+```
 
-1. En Coolify: **Settings** → **Source Providers** (o **GitHub**).
-2. **Connect GitHub** e instalá la app **Coolify** en tu cuenta u organización.
-3. Al instalar, marcá el repo `referentes` (o dale acceso a **All repositories** / **Selected repositories**).
-4. Volvé a crear el recurso Docker Compose y elegí el repo desde la lista.
+5. Dominio + HTTPS → servicio **`frontend`** (puerto 80)
+6. **Deploy**
 
-Si no querés usar la app de GitHub:
+Verificá: `https://tu-dominio.com/api/health`
 
-- **Deploy Key**: Coolify te muestra una clave pública → en GitHub: repo → **Settings** → **Deploy keys** → Add.
-- **Personal Access Token (classic)**: permiso `repo` → pegarlo en Coolify como source.
+---
 
-Los **webhooks** (auto-deploy al hacer `git push`) también funcionan con repo privado, siempre que la integración GitHub esté conectada.
+## 3. Cuando cambiás código
 
-## 1. Crear el proyecto en Coolify
+```bash
+bash scripts/docker-push.sh
+```
 
-1. Conectá tu servidor Coolify.
-2. **+ New Resource** → **Docker Compose**.
-3. Source: GitHub → `lucasdealmeida123/referentes`.
-4. Branch: `main`.
-5. **Base Directory**: `/` (raíz del repo, **no** `frontend` ni `backend`).
-6. **Docker Compose file**: `docker-compose.prod.yml`.
-7. Activá **Persistent Storage** para el servicio `db` (volumen `db_data`).
+Luego en Coolify: **Redeploy** (pull de `:latest`).
 
-## 2. Variables de entorno
+---
 
-En Coolify, en el recurso Compose, agregá:
-
-| Variable | Valor | Notas |
-|----------|-------|-------|
-| `POSTGRES_DB` | `elecciones` | |
-| `POSTGRES_USER` | `elecciones` | |
-| `POSTGRES_PASSWORD` | *(generá una segura)* | **Obligatoria** |
-| `DB_SYNCHRONIZE` | `false` | No alterar schema en prod |
-
-Ya no hace falta `VITE_API_URL` en Coolify (va embebida vacía en la imagen del frontend).
-
-Podés copiar desde `.env.example`.
-
-## 3. Dominio
-
-1. En Coolify, asigná un dominio al servicio **`frontend`** (puerto 80).
-2. Activá HTTPS (Let's Encrypt).
-3. **No** hace falta exponer `backend` ni `db` a internet.
-
-## 4. Primer deploy
-
-1. Confirmá que GitHub Actions terminó OK (imágenes en GHCR).
-2. **Deploy** en Coolify → solo descarga imágenes + levanta PostGIS.
-3. Verificá: `https://tu-dominio/api/health` → debe responder OK.
-4. La base arranca **vacía** (restaurá dump si tenés datos locales).
-
-## 5. Migrar datos desde local
-
-### Exportar (en tu Mac, con Docker local corriendo)
+## 4. Migrar datos locales
 
 ```bash
 bash scripts/backup-db.sh
-# Genera: elecciones-YYYYMMDD-HHMM.dump
+# Restaurar en contenedor db de Coolify (ver scripts/restore-db.sh)
 ```
 
-### Restaurar en Coolify
+---
 
-**Opción A — Terminal del contenedor `db` en Coolify**
-
-1. Subí el `.dump` al servidor (scp).
-2. Copiá al contenedor: `docker cp elecciones.dump <container_db>:/tmp/`
-3. Dentro del contenedor:
-
-```bash
-pg_restore -U elecciones -d elecciones --clean --if-exists /tmp/elecciones.dump
-```
-
-**Opción B — Desde tu máquina** (si Coolify expone Postgres solo en red interna, usá túnel SSH):
-
-```bash
-DB_HOST=127.0.0.1 DB_PORT=5432 POSTGRES_PASSWORD=... bash scripts/restore-db.sh elecciones.dump
-```
-
-## 6. Actualizaciones
-
-Cada push a `main`:
-
-- Coolify puede redeployar automático (webhook).
-- La base **persiste** en el volumen `db_data` si configuraste storage.
-
-```bash
-git push origin main
-```
-
-## Desarrollo local (sin cambios)
+## Desarrollo local
 
 ```bash
 docker compose up --build
 ```
 
-- Frontend: http://localhost:5173  
-- Backend: http://localhost:3001/api/health  
-- Postgres: localhost:55432  
+Frontend: http://localhost:5173 · API: http://localhost:3001/api/health
 
-## Troubleshooting
+---
 
-| Problema | Solución |
-|----------|----------|
-| `backend: no such file or directory` | Normal con build en servidor; usá imágenes GHCR (este repo ya está configurado así) |
-| `pull access denied` / `manifest unknown` | Esperá GitHub Actions o configurá registry GHCR en Coolify |
-| Frontend carga pero API falla | Dominio debe apuntar al servicio `frontend`, no al backend |
-| `/api/health` 502 | Backend no levantó; revisá logs y credenciales DB |
-| Mapa sin polígonos | Confirmá PostGIS (`postgis/postgis`) y que el dump incluya circuitos |
-| Build frontend falla | Revisá logs; `npm run build` debe pasar en local |
+## Problemas frecuentes
 
-## Build manual (opcional)
-
-```bash
-docker compose -f docker-compose.prod.yml build
-docker compose -f docker-compose.prod.yml up -d
-```
-
-Requiere `.env` con `POSTGRES_PASSWORD` definido.
+| Error | Qué hacer |
+|-------|-----------|
+| `pull access denied` | Imagen no existe → corré `bash scripts/docker-push.sh` |
+| `manifest unknown` | Mismo: falta push o nombre de usuario distinto |
+| API 502 | Revisá logs del backend y `POSTGRES_PASSWORD` |
+| Repo privado en Docker Hub | Hacelo public o agregá registry en Coolify |

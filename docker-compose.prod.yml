@@ -1,5 +1,4 @@
-# Stack de producción para Coolify
-# Imágenes pre-construidas por GitHub Actions (no build local en el servidor).
+# Stack producción — imágenes desde Docker Hub (docker pull, sin build en servidor)
 
 services:
   db:
@@ -20,7 +19,7 @@ services:
       - referentes
 
   backend:
-    image: ghcr.io/lucasdealmeida123/referentes-backend:latest
+    image: ${BACKEND_IMAGE:-lucasdealmeida123/referentes-backend:latest}
     pull_policy: always
     restart: unless-stopped
     depends_on:
@@ -41,7 +40,7 @@ services:
       - referentes
 
   frontend:
-    image: ghcr.io/lucasdealmeida123/referentes-frontend:latest
+    image: ${FRONTEND_IMAGE:-lucasdealmeida123/referentes-frontend:latest}
     pull_policy: always
     restart: unless-stopped
     depends_on:

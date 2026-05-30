@@ -43,17 +43,12 @@ docker compose down
 
 ## Despliegue en Coolify (producción)
 
-Ver guía completa: [`docs/COOLIFY.md`](docs/COOLIFY.md)
-
-Resumen:
+Ver guía: [`docs/COOLIFY.md`](docs/COOLIFY.md)
 
 ```bash
-# En Coolify: Docker Compose → docker-compose.prod.yml
-# Variables: POSTGRES_PASSWORD, DB_SYNCHRONIZE=false, VITE_API_URL=(vacío)
-# Dominio: asignar solo al servicio frontend
-
-# Backup local antes de migrar datos
-bash scripts/backup-db.sh
+docker login
+bash scripts/docker-push.sh   # sube imágenes a Docker Hub
+# Luego Redeploy en Coolify
 ```
 
 ## Siguiente paso sugerido
