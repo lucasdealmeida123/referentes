@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: elecciones_db
+    environment:
+      POSTGRES_DB: elecciones
+      POSTGRES_USER: elecciones
+      POSTGRES_PASSWORD: elecciones
+    ports:
+      - "55432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U elecciones -d elecciones"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    container_name: elecciones_backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: elecciones
+      DB_USER: elecciones
+      DB_PASSWORD: elecciones
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: npm run start:dev
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: elecciones_frontend
+    depends_on:
+      - backend
+    environment:
+      NODE_ENV: development
+      VITE_API_URL: http://localhost:3001
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: sh -c "npm install --include=optional && npm install --no-save @rollup/rollup-linux-arm64-musl && npm run dev -- --host 0.0.0.0 --port 5173"
+
+volumes:
+  db_data:
