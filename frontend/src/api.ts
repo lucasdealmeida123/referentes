@@ -3,7 +3,18 @@ import type {
   Assignment, CoverageItem, CoverageDashboard, EventItem, Referent, MapDataset,
 } from "./types";
 
-const BASE = (import.meta as any).env?.VITE_API_URL || "http://localhost:3001";
+function resolveApiBase(): string {
+  const raw = import.meta.env.VITE_API_URL;
+  if (typeof raw === "string") {
+    if (raw === "") {
+      return typeof window !== "undefined" ? window.location.origin : "";
+    }
+    return raw.replace(/\/$/, "");
+  }
+  return "http://localhost:3001";
+}
+
+const BASE = resolveApiBase();
 const API  = `${BASE}/api`;
 
 async function get<T>(path: string, params?: Record<string, string>): Promise<T> {

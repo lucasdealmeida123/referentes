@@ -41,6 +41,21 @@ docker compose down
 - `frontend/`: interfaz React
 - `docker-compose.yml`: orquestacion completa
 
+## Despliegue en Coolify (producción)
+
+Ver guía completa: [`docs/COOLIFY.md`](docs/COOLIFY.md)
+
+Resumen:
+
+```bash
+# En Coolify: Docker Compose → docker-compose.prod.yml
+# Variables: POSTGRES_PASSWORD, DB_SYNCHRONIZE=false, VITE_API_URL=(vacío)
+# Dominio: asignar solo al servicio frontend
+
+# Backup local antes de migrar datos
+bash scripts/backup-db.sh
+```
+
 ## Siguiente paso sugerido
 
 Implementar endpoint de importacion `KMZ/KML`.

@@ -1,0 +1,63 @@
+# Stack de producción para Coolify / Docker Compose
+# Un solo dominio en el frontend; nginx redirige /api al backend.
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-elecciones}
+      POSTGRES_USER: ${POSTGRES_USER:-elecciones}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD requerido}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-elecciones} -d ${POSTGRES_DB:-elecciones}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - referentes
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-elecciones}
+      DB_USER: ${POSTGRES_USER:-elecciones}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD requerido}
+      DB_SYNCHRONIZE: ${DB_SYNCHRONIZE:-false}
+    expose:
+      - "3000"
+    networks:
+      - referentes
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_URL: ${VITE_API_URL:-}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    expose:
+      - "80"
+    networks:
+      - referentes
+
+volumes:
+  db_data:
+
+networks:
+  referentes:
+    driver: bridge

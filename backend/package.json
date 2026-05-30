@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start:dev": "ts-node src/main.ts"
+    "build": "tsc",
+    "start:dev": "ts-node src/main.ts",
+    "start:prod": "node dist/main.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.19",

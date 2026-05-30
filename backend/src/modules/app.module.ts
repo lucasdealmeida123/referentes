@@ -29,7 +29,7 @@ import { AuditLog } from "./audit/audit-log.entity";
       password: process.env.DB_PASSWORD || "elecciones",
       database: process.env.DB_NAME || "elecciones",
       autoLoadEntities: true,
-      synchronize: true,
+      synchronize: process.env.DB_SYNCHRONIZE === "true",
       entities: [
         Campaign,
         Circuit,
