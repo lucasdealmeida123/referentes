@@ -1,5 +1,5 @@
-# Stack de producción para Coolify / Docker Compose
-# Un solo dominio en el frontend; nginx redirige /api al backend.
+# Stack de producción para Coolify
+# Imágenes pre-construidas por GitHub Actions (no build local en el servidor).
 
 services:
   db:
@@ -20,9 +20,8 @@ services:
       - referentes
 
   backend:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile.prod
+    image: ghcr.io/lucasdealmeida123/referentes-backend:latest
+    pull_policy: always
     restart: unless-stopped
     depends_on:
       db:
@@ -42,11 +41,8 @@ services:
       - referentes
 
   frontend:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile.prod
-      args:
-        VITE_API_URL: ${VITE_API_URL:-}
+    image: ghcr.io/lucasdealmeida123/referentes-frontend:latest
+    pull_policy: always
     restart: unless-stopped
     depends_on:
       - backend
